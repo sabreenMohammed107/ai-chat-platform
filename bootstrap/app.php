@@ -2,10 +2,12 @@
 
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureTenantUser;
+use App\Http\Middleware\SeparateAreaSessions;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,12 +17,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [SetLocale::class]);
+        // Before the session starts: the admin panel and the portal use different session cookies
+        $middleware->web(prepend: [SeparateAreaSessions::class], append: [SetLocale::class]);
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'tenant' => EnsureTenantUser::class,
         ]);
-        $middleware->redirectGuestsTo('/login');
+        $middleware->redirectGuestsTo(fn (Request $request) => SeparateAreaSessions::isAdmin($request) ? route('admin.login') : route('portal.login'));
+        $middleware->redirectUsersTo(fn (Request $request) => SeparateAreaSessions::isAdmin($request) ? route('admin.dashboard') : route('portal.dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -9,6 +9,8 @@ use App\Models\Tenant;
 use App\Services\Chat\Agent;
 use App\Services\Chat\Usage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -17,6 +19,25 @@ class DashboardController extends Controller
     private function tenant(Request $request): Tenant
     {
         return $request->attributes->get('tenant');
+    }
+
+    /**
+     * The admin's one-time link from "Open portal": this portal session becomes an admin view of that client. A client
+     * signed in to the portal in this browser is signed out of it first.
+     */
+    public function enter(Request $request, string $token)
+    {
+        $view = Cache::pull('portal-enter:'.$token);
+        if (! $view) {
+            return redirect()->route('portal.login')->withErrors(['email' => __('This link has expired. Open the portal again from the admin panel.')]);
+        }
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        $request->session()->put('admin_view', $view);
+
+        return redirect()->route('portal.dashboard');
     }
 
     public function index(Request $request)
@@ -87,7 +108,7 @@ class DashboardController extends Controller
         $key = 'try_conversation_'.$tenant->id;
         $conversation = $request->boolean('reset') ? null
             : Conversation::where('tenant_id', $tenant->id)->where('uuid', (string) $request->session()->get($key))->first();
-        $conversation ??= Conversation::create(['tenant_id' => $tenant->id, 'channel' => 'test', 'user_ref' => $request->user()->email]);
+        $conversation ??= Conversation::create(['tenant_id' => $tenant->id, 'channel' => 'test', 'user_ref' => $request->user()?->email ?? 'admin']);
         $request->session()->put($key, $conversation->uuid);
 
         try {

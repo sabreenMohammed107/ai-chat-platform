@@ -167,5 +167,20 @@
   "Not saved:": "متحفظش:",
   "Pages and files read (:n)": "الصفحات والملفات اللي اتقرت (:n)",
   "Page": "صفحة",
-  ":n passages": ":n مقطع"
+  ":n passages": ":n مقطع",
+  "Admin panel": "لوحة الأدمن",
+  "Client portal": "بوابة العميل",
+  "This account is not an admin account. Clients sign in at :url": "الحساب ده مش حساب أدمن. العملاء بيدخلوا من :url",
+  "This is the admin account. Sign in at :url": "ده حساب الأدمن. ادخلي من :url",
+  "This link has expired. Open the portal again from the admin panel.": "اللينك ده انتهى. افتحي البوابة تاني من لوحة الأدمن.",
+  "You are viewing this client's portal as the admin. Changes here apply to the client.": "إنتِ فاتحة بوابة العميل ده كأدمن. أي تغيير هنا بيتطبق على العميل.",
+  "Danger zone: reset knowledge": "منطقة خطر: مسح المعرفة بالكامل",
+  "This deletes everything the assistant knows, for good. It cannot be undone.": "ده بيمسح كل حاجة المساعد يعرفها نهائياً، ومفيش رجوع.",
+  ":n sources and :p passages will be deleted.": "هيتمسح :n مصدر و :p مقطع.",
+  "Until you add new knowledge, the assistant answers every question with \"I don't know\".": "لحد ما تضيفي معرفة جديدة، المساعد هيرد على أي سؤال بـ \"مش عارف\".",
+  "Conversations, API keys, the widget and the assistant settings are kept.": "المحادثات ومفاتيح الـ API والـ widget وإعدادات المساعد مش هتتمسح.",
+  "Type RESET to confirm:": "اكتبي RESET للتأكيد:",
+  "Delete all knowledge": "امسح كل المعرفة",
+  "Type RESET to confirm. Nothing was deleted.": "لازم تكتبي RESET للتأكيد. متمسحش حاجة.",
+  "Knowledge reset: :s sources and :p passages deleted. The assistant now knows nothing until you add new knowledge.": "المعرفة اتمسحت: :s مصدر و :p مقطع. المساعد دلوقتي مش عارف حاجة لحد ما تضيفي معرفة جديدة."
 }

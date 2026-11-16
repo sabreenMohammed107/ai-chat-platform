@@ -13,7 +13,7 @@ Artisan::command('chat:make-admin {email} {name=Admin}', function (string $email
     $user = User::firstOrNew(['email' => $email]);
     $user->forceFill(['name' => $name, 'password' => $password, 'is_admin' => true, 'tenant_id' => null])->save();
     $this->info("Admin {$email} is ready. Password: {$password}");
-    $this->line('Sign in at '.url('/login').' and keep the password somewhere safe.');
+    $this->line('Sign in at '.url('/admin/login').' and keep the password somewhere safe.');
 })->purpose('Create (or reset) the platform admin account');
 
 // Shared hosting has no long-running worker: every minute, the scheduler works through the queue and stops

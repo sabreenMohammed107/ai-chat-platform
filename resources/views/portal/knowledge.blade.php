@@ -81,6 +81,33 @@
         </tbody>
     </table>
 </div>
+
+@if ($sources->isNotEmpty())
+<div class="card danger" id="reset">
+    <h2>⚠ {{ __('Danger zone: reset knowledge') }}</h2>
+    <p><strong>{{ __('This deletes everything the assistant knows, for good. It cannot be undone.') }}</strong></p>
+    <ul>
+        <li>{{ __(':n sources and :p passages will be deleted.', ['n' => $sources->count(), 'p' => $sources->sum('chunks_count')]) }}</li>
+        <li>{{ __('Until you add new knowledge, the assistant answers every question with "I don\'t know".') }}</li>
+        <li>{{ __('Conversations, API keys, the widget and the assistant settings are kept.') }}</li>
+    </ul>
+    <form method="post" action="{{ route('portal.knowledge.reset') }}" class="row" id="reset-form">
+        @csrf @method('delete')
+        <label for="confirm" style="margin:0">{{ __('Type RESET to confirm:') }}</label>
+        <input type="text" id="confirm" name="confirm" autocomplete="off" placeholder="RESET" required>
+        <button class="btn critical" id="reset-btn" disabled>{{ __('Delete all knowledge') }}</button>
+    </form>
+    @error('confirm')<div class="field-error">{{ $message }}</div>@enderror
+</div>
+<script>
+    (function () {
+        const input = document.getElementById('confirm');
+        const button = document.getElementById('reset-btn');
+        input.addEventListener('input', () => { button.disabled = input.value.trim().toUpperCase() !== 'RESET'; });
+    })();
+</script>
+@endif
+
 @if ($sources->whereIn('status', ['pending', 'syncing'])->isNotEmpty())
     <script>setTimeout(() => location.reload(), 15000);</script>
 @endif

@@ -27,7 +27,7 @@
                 <td>{{ number_format($t->messagesUsed()) }} / {{ number_format($t->messagesAllowed()) }}</td>
                 <td>${{ number_format((float) $t->cost_30, 2) }}</td>
                 <td>{{ $t->subscription?->plan ? number_format((float) $t->subscription->plan->price, 2) : '—' }}</td>
-                <td><form method="post" action="{{ route('admin.tenants.open', $t) }}">@csrf<button class="btn sm light">{{ __('Open portal') }}</button></form></td>
+                <td><form method="post" action="{{ route('admin.tenants.open', $t) }}" target="_blank">@csrf<button class="btn sm light">{{ __('Open portal') }}</button></form></td>
             </tr>
         @empty
             <tr><td colspan="7" class="muted">{{ __('No clients yet.') }} @if (\App\Models\Plan::count() === 0)<a href="{{ route('admin.plans') }}">{{ __('Create a plan first.') }}</a>@endif</td></tr>

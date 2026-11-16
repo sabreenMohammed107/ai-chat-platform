@@ -4,13 +4,13 @@
 <p><a href="{{ route('admin.dashboard') }}">← {{ __('Clients') }}</a></p>
 <div class="row" style="margin-bottom:14px">
     <h1 class="grow" style="margin:0">{{ $client->name }}</h1>
-    <form method="post" action="{{ route('admin.tenants.open', $client) }}">@csrf<button class="btn light">{{ __('Open portal') }}</button></form>
+    <form method="post" action="{{ route('admin.tenants.open', $client) }}" target="_blank">@csrf<button class="btn light">{{ __('Open portal') }}</button></form>
 </div>
 
 @if (session('credentials'))
     <div class="alert key">
         <strong>{{ __('Login for the client (shown once):') }}</strong>
-        <pre>{{ url('/login') }}
+        <pre>{{ route('portal.login') }}
 {{ session('credentials')['email'] }}
 {{ session('credentials')['password'] }}</pre>
     </div>

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Knowledge\SafeUrl;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -136,19 +137,16 @@ class TenantController extends Controller
         return back()->with('credentials', ['email' => $data['email'], 'password' => $password]);
     }
 
-    /** Opens the client's portal as the admin, to manage their knowledge, keys and settings. */
+    /**
+     * Opens the client's portal (in its own session, usually a new tab) to manage their knowledge, keys and settings:
+     * a one-time link, valid for two minutes, that the portal turns into an admin view of this client.
+     */
     public function open(Request $request, Tenant $tenant)
     {
-        $request->session()->put('as_tenant', $tenant->id);
+        $token = Str::random(48);
+        Cache::put('portal-enter:'.$token, ['admin_id' => $request->user()->id, 'tenant_id' => $tenant->id], now()->addMinutes(2));
 
-        return redirect()->route('portal.dashboard');
-    }
-
-    public function close(Request $request)
-    {
-        $id = $request->session()->pull('as_tenant');
-
-        return $id ? redirect()->route('admin.tenants.edit', $id) : redirect()->route('admin.dashboard');
+        return redirect()->route('portal.enter', $token);
     }
 
     private function addSubscription(Tenant $tenant, int $planId, CarbonImmutable $start, int $months): Subscription

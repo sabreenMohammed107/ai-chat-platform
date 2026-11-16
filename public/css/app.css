@@ -49,6 +49,21 @@ textarea { min-height: 90px; }
 .badge.ready, .badge.active { background: #d1fae5; color: var(--ok); }
 .badge.failed, .badge.suspended, .badge.expired { background: #fee2e2; color: var(--bad); }
 .badge.syncing, .badge.pending { background: #fef3c7; color: var(--warn); }
+/* Admin panel vs client portal: different tag and sidebar colour, so the two are never confused */
+.area-tag { display: inline-block; margin: 0 8px 14px; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.area-tag.admin { background: #fef3c7; color: #92400e; }
+.area-tag.portal { background: #e0e7ff; color: #3730a3; }
+.area-admin .side { background: #1c1917; }
+.area-admin .side a.on, .area-admin .side a:hover { background: #292524; }
+
+/* Danger zone: actions that cannot be undone */
+.danger { border: 2px solid var(--bad); background: #fff5f5; }
+.danger h2 { color: var(--bad); display: flex; align-items: center; gap: 8px; }
+.danger ul { margin: 8px 0 12px; padding-inline-start: 20px; }
+.danger input[name=confirm] { max-width: 260px; font-family: ui-monospace, Consolas, monospace; letter-spacing: 1px; }
+.btn.critical { background: var(--bad); color: #fff; }
+.btn.critical:disabled { opacity: .45; cursor: not-allowed; }
+
 .read-list { margin-top: 6px; }
 .read-list summary { cursor: pointer; color: var(--brand); font-weight: 600; }
 .read-list ul { list-style: none; margin: 6px 0 0; padding: 0; }

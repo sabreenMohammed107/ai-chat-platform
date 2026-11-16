@@ -3,15 +3,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('Sign in') }} · {{ config('app.name') }}</title>
+    <title>{{ $area === 'admin' ? __('Admin panel') : __('Client portal') }} · {{ config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
-<body>
+<body class="{{ $area === 'admin' ? 'area-admin' : 'area-portal' }}">
 <div class="login">
     <div class="card">
+        <div class="area-tag {{ $area }}" style="margin:0 0 10px">{{ $area === 'admin' ? __('Admin panel') : __('Client portal') }}</div>
         <h1>{{ config('app.name') }}</h1>
         @if ($errors->any())<div class="alert error">{{ $errors->first() }}</div>@endif
-        <form method="post" action="{{ url('/login') }}">
+        <form method="post" action="{{ $area === 'admin' ? route('admin.login') : route('portal.login') }}">
             @csrf
             <label for="email">{{ __('Email') }}</label>
             <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus>

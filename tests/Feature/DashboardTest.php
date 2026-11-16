@@ -30,10 +30,34 @@ class DashboardTest extends TestCase
         return User::create(['name' => $name.' owner', 'email' => strtolower($name).'@client.test', 'password' => 'secret123', 'tenant_id' => $tenant->id]);
     }
 
-    public function test_guests_are_sent_to_login(): void
+    public function test_guests_are_sent_to_the_login_of_their_area(): void
     {
-        $this->get('/portal')->assertRedirect('/login');
-        $this->get('/admin')->assertRedirect('/login');
+        $this->get('/portal')->assertRedirect('/portal/login');
+        $this->get('/admin')->assertRedirect('/admin/login');
+        $this->get('/')->assertRedirect('/portal');
+    }
+
+    public function test_the_admin_panel_and_the_portal_use_different_session_cookies(): void
+    {
+        $admin = $this->get('/admin/login')->assertOk()->assertSee('Admin panel');
+        $portal = $this->get('/portal/login')->assertOk()->assertSee('Client portal');
+
+        $this->assertSame(['ai_chat_platform_admin_session'], array_values(array_filter(array_map(fn ($c) => $c->getName(), $admin->headers->getCookies()), fn ($n) => str_ends_with($n, '_session'))));
+        $this->assertSame(['ai_chat_platform_portal_session'], array_values(array_filter(array_map(fn ($c) => $c->getName(), $portal->headers->getCookies()), fn ($n) => str_ends_with($n, '_session'))));
+    }
+
+    public function test_each_login_accepts_only_its_own_kind_of_account(): void
+    {
+        $this->admin();
+        $this->client('Shop');
+
+        $this->post('/admin/login', ['email' => 'shop@client.test', 'password' => 'secret123'])->assertSessionHasErrors('email');
+        $this->assertGuest();
+        $this->post('/portal/login', ['email' => 'admin@platform.test', 'password' => 'secret123'])->assertSessionHasErrors('email');
+        $this->assertGuest();
+
+        $this->post('/portal/login', ['email' => 'shop@client.test', 'password' => 'secret123'])->assertRedirect('/portal');
+        $this->assertAuthenticated();
     }
 
     public function test_a_client_sees_only_their_own_conversations(): void
@@ -128,9 +152,38 @@ class DashboardTest extends TestCase
             $this->actingAs($admin)->get($url)->assertOk();
         }
 
-        // The admin can open the client's portal
-        $this->actingAs($admin)->post("/admin/tenants/{$tenant->id}/open")->assertRedirect('/portal');
-        $this->actingAs($admin)->get('/portal')->assertOk()->assertSee('Gift Shop');
+        // The admin opens the client's portal through a one-time link
+        $location = $this->actingAs($admin)->post("/admin/tenants/{$tenant->id}/open")->assertRedirect()->headers->get('Location');
+        $this->assertStringContainsString('/portal/enter/', $location);
+        $this->get($location)->assertRedirect('/portal');
+        $this->get('/portal')->assertOk()->assertSee('Gift Shop')->assertSee('as the admin');
+        // The link works once
+        $this->app['session.store']->flush();
+        $this->get($location)->assertRedirect('/portal/login');
+    }
+
+    public function test_reset_knowledge_needs_reset_typed_and_deletes_only_this_clients_knowledge(): void
+    {
+        $user = $this->client('Shop');
+        $other = $this->client('Other');
+        foreach ([$user, $other] as $u) {
+            $source = $u->tenant->sources()->create(['type' => 'website', 'title' => 'site', 'url' => 'https://x.test', 'status' => 'ready']);
+            $source->chunks()->create(['tenant_id' => $u->tenant_id, 'content' => 'text']);
+            $u->tenant->sources()->create(['type' => 'faq', 'title' => 'Q', 'content' => 'A', 'status' => 'ready']);
+        }
+        Conversation::create(['tenant_id' => $user->tenant_id]);
+
+        $this->actingAs($user)->get('/portal/knowledge')->assertSee('Danger zone')->assertSee('2 sources and 1 passages will be deleted.');
+
+        $this->actingAs($user)->delete('/portal/knowledge/reset', ['confirm' => 'yes'])->assertSessionHasErrors('confirm');
+        $this->assertSame(2, $user->tenant->sources()->count());
+
+        $this->actingAs($user)->delete('/portal/knowledge/reset', ['confirm' => 'reset'])->assertRedirect('/portal/knowledge');
+        $this->assertSame(0, $user->tenant->sources()->count());
+        $this->assertSame(0, $user->tenant->chunks()->count());
+        $this->assertSame(1, $user->tenant->conversations()->count());
+        $this->assertSame(2, $other->tenant->sources()->count());
+        $this->assertSame(1, $other->tenant->chunks()->count());
     }
 
     public function test_editing_a_client_saves_a_website_typed_without_https_and_allows_it_in_the_widget(): void
