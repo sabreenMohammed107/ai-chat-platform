@@ -68,17 +68,27 @@
   if (left) wrap.style.textAlign = 'left'; else wrap.style.textAlign = 'right';
   root.querySelector('.panel').style.textAlign = 'start';
 
-  // Text only (never HTML from the answer); http(s) links become links
+  // Text only (never HTML from the answer): http(s) links become links, **bold** becomes bold, "# " headings plain
   function render(el, text) {
     el.textContent = '';
-    var parts = String(text).split(/(https?:\/\/[^\s<>"')\]]+)/g);
+    var clean = String(text).replace(/^#{1,6}\s+/gm, '');
+    var parts = clean.split(/(https?:\/\/[^\s<>"')\]*]+)/g);
     parts.forEach(function (part, i) {
       if (i % 2 === 1) {
         var a = document.createElement('a');
         a.href = part; a.textContent = part; a.target = '_blank'; a.rel = 'noopener noreferrer';
         el.appendChild(a);
       } else if (part) {
-        el.appendChild(document.createTextNode(part));
+        part.split(/\*\*([^*]+)\*\*/g).forEach(function (piece, j) {
+          if (!piece) return;
+          if (j % 2 === 1) {
+            var b = document.createElement('strong');
+            b.textContent = piece;
+            el.appendChild(b);
+          } else {
+            el.appendChild(document.createTextNode(piece.replace(/\*\*/g, '')));
+          }
+        });
       }
     });
   }
