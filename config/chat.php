@@ -46,6 +46,9 @@ return [
         'block_private' => (bool) env('CHAT_CRAWL_BLOCK_PRIVATE', true),
         // Pages read when the client has no active plan (the admin syncing before the subscription starts)
         'default_pages' => 50,
+        // PDFs linked from the site (brochures, syllabi) read on each sync, and the largest one read
+        'max_pdfs' => 20,
+        'max_pdf_bytes' => 10 * 1024 * 1024,
     ],
 
     // Share of the monthly messages after which the client is emailed (once a period)

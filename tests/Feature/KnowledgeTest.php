@@ -56,6 +56,55 @@ class KnowledgeTest extends TestCase
         $this->assertSame('https://shop.test/shipping', $found->first()->url);
     }
 
+    public function test_pdfs_linked_from_the_site_are_read_too(): void
+    {
+        config(['chat.crawl.block_private' => false]);
+        $tenant = $this->tenant();
+        Http::fake([
+            'shop.test/sitemap.xml' => Http::response('', 404),
+            'shop.test/files/laravel-syllabus.pdf' => Http::response($this->pdf('Laravel syllabus: routing, Eloquent models and testing in eight weeks.'), 200, ['Content-Type' => 'application/pdf']),
+            'shop.test/' => Http::response('<html><head><title>Courses</title></head><body><p>Our courses for this season are listed here with their syllabus.</p><a href="/files/laravel-syllabus.pdf" download>Syllabus PDF</a></body></html>', 200, ['Content-Type' => 'text/html']),
+            '*' => Http::response('', 404),
+        ]);
+
+        $source = $tenant->sources()->create(['type' => 'website', 'title' => 'shop.test', 'url' => 'https://shop.test']);
+        SyncKnowledgeSource::dispatchSync($source);
+
+        $source->refresh();
+        $this->assertSame('ready', $source->status, (string) $source->error);
+        $this->assertSame(2, $source->pages);
+        $pdf = $source->chunks()->where('url', 'https://shop.test/files/laravel-syllabus.pdf')->first();
+        $this->assertNotNull($pdf);
+        $this->assertSame('laravel syllabus', $pdf->title);
+        $this->assertStringContainsString('Eloquent models', $pdf->content);
+    }
+
+    /** A one-page PDF with $text on it. */
+    private function pdf(string $text): string
+    {
+        $stream = 'BT /F1 12 Tf 72 720 Td ('.$text.') Tj ET';
+        $objects = [
+            '<< /Type /Catalog /Pages 2 0 R >>',
+            '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+            '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+            '<< /Length '.strlen($stream).' >>'."\nstream\n".$stream."\nendstream",
+            '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+        ];
+        $pdf = "%PDF-1.4\n";
+        $offsets = [];
+        foreach ($objects as $i => $object) {
+            $offsets[] = strlen($pdf);
+            $pdf .= ($i + 1)." 0 obj\n".$object."\nendobj\n";
+        }
+        $xref = strlen($pdf);
+        $pdf .= "xref\n0 ".(count($objects) + 1)."\n0000000000 65535 f \n";
+        foreach ($offsets as $offset) {
+            $pdf .= sprintf("%010d 00000 n \n", $offset);
+        }
+
+        return $pdf.'trailer << /Size '.(count($objects) + 1)." /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF";
+    }
+
     public function test_a_failed_crawl_keeps_the_old_passages(): void
     {
         config(['chat.crawl.block_private' => false]);

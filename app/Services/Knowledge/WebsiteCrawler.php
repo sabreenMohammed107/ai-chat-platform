@@ -11,6 +11,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use RuntimeException;
+use Smalot\PdfParser\Parser;
 use Throwable;
 
 /**
@@ -31,11 +32,19 @@ class WebsiteCrawler
         $origin = parse_url($startUrl, PHP_URL_SCHEME).'://'.parse_url($startUrl, PHP_URL_HOST).(parse_url($startUrl, PHP_URL_PORT) ? ':'.parse_url($startUrl, PHP_URL_PORT) : '');
 
         $queue = [];
+        $pdfs = [];
         $seen = [];
-        $add = function (string $url) use (&$queue, &$seen, $host) {
+        $add = function (string $url) use (&$queue, &$pdfs, &$seen, $host) {
             $url = $this->normalise($url);
-            if ($url && ! isset($seen[$url]) && $this->host($url) === $host && ! preg_match(self::SKIP_EXTENSIONS, (string) parse_url($url, PHP_URL_PATH))) {
-                $seen[$url] = true;
+            if (! $url || isset($seen[$url]) || $this->host($url) !== $host) {
+                return;
+            }
+            $path = (string) parse_url($url, PHP_URL_PATH);
+            $seen[$url] = true;
+            if (preg_match('/\.pdf$/i', $path)) {
+                // PDFs the site links to (brochures, syllabi, price lists) are read after the pages
+                $pdfs[] = $url;
+            } elseif (! preg_match(self::SKIP_EXTENSIONS, $path)) {
                 $queue[] = $url;
             }
         };
@@ -66,7 +75,35 @@ class WebsiteCrawler
             throw new RuntimeException('No readable pages were found at this address.');
         }
 
+        foreach (array_slice($pdfs, 0, (int) config('chat.crawl.max_pdfs', 20)) as $url) {
+            if ($pdf = $this->readPdf($url)) {
+                $pages[] = $pdf;
+            }
+        }
+
         return $pages;
+    }
+
+    /** @return array{url: string, title: string, text: string}|null a linked PDF's text, or null when it has none */
+    private function readPdf(string $url): ?array
+    {
+        $response = $this->get($url);
+        if (! $response || ! $response->successful() || strlen($response->body()) > (int) config('chat.crawl.max_pdf_bytes', 10 * 1024 * 1024)
+            || ! str_starts_with($response->body(), '%PDF')) {
+            return null;
+        }
+        try {
+            $text = (new Parser)->parseContent($response->body())->getText();
+        } catch (Throwable) {
+            return null;
+        }
+        $text = trim(preg_replace("/[ \t]+/u", ' ', mb_check_encoding($text, 'UTF-8') ? $text : mb_convert_encoding($text, 'UTF-8', 'ISO-8859-1')));
+        if (mb_strlen($text) < 40) {
+            return null;
+        }
+        $name = urldecode(basename((string) parse_url($url, PHP_URL_PATH)));
+
+        return ['url' => $url, 'title' => mb_substr(preg_replace('/[-_]+/', ' ', preg_replace('/\.pdf$/i', '', $name)), 0, 250), 'text' => $text];
     }
 
     /** @return list<string> page URLs of a sitemap (or of the sitemaps of a sitemap index, one level down) */
