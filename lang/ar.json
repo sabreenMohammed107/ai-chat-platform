@@ -164,5 +164,8 @@
   "messages": "رسالة",
   "no body code": "من غير code",
   "Its domain is added to the widget's allowed domains.": "الدومين بتاعه بيتضاف لوحده للدومينات المسموحة للـ widget.",
-  "Not saved:": "متحفظش:"
+  "Not saved:": "متحفظش:",
+  "Pages and files read (:n)": "الصفحات والملفات اللي اتقرت (:n)",
+  "Page": "صفحة",
+  ":n passages": ":n مقطع"
 }

@@ -49,6 +49,11 @@ textarea { min-height: 90px; }
 .badge.ready, .badge.active { background: #d1fae5; color: var(--ok); }
 .badge.failed, .badge.suspended, .badge.expired { background: #fee2e2; color: var(--bad); }
 .badge.syncing, .badge.pending { background: #fef3c7; color: var(--warn); }
+.read-list { margin-top: 6px; }
+.read-list summary { cursor: pointer; color: var(--brand); font-weight: 600; }
+.read-list ul { list-style: none; margin: 6px 0 0; padding: 0; }
+.read-list li { padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.read-list li .badge { margin-inline-end: 6px; }
 .field-error { color: var(--bad); font-size: 13px; margin-top: 4px; }
 .alert { padding: 11px 14px; border-radius: 8px; margin-bottom: 16px; background: #d1fae5; color: #065f46; }
 .alert.error { background: #fee2e2; color: #991b1b; }

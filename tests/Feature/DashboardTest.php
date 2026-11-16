@@ -61,6 +61,21 @@ class DashboardTest extends TestCase
         $this->assertNotNull($source->fresh());
     }
 
+    public function test_the_knowledge_page_lists_the_pages_and_files_a_website_sync_read(): void
+    {
+        $user = $this->client();
+        $source = $user->tenant->sources()->create(['type' => 'website', 'title' => 'shop.test (sitemap)', 'url' => 'https://shop.test/sitemap.xml', 'status' => 'ready']);
+        foreach ([['https://shop.test/courses', 'Courses'], ['https://shop.test/courses', 'Courses'], ['https://shop.test/files/laravel-syllabus.pdf', 'laravel syllabus']] as [$url, $title]) {
+            $source->chunks()->create(['tenant_id' => $user->tenant_id, 'url' => $url, 'title' => $title, 'content' => 'text']);
+        }
+
+        $this->actingAs($user)->get('/portal/knowledge')
+            ->assertOk()
+            ->assertSee('Pages and files read (2)')
+            ->assertSee('https://shop.test/files/laravel-syllabus.pdf')
+            ->assertSee('2 passages');
+    }
+
     public function test_a_client_cannot_open_the_admin_panel(): void
     {
         $this->actingAs($this->client())->get('/admin')->assertForbidden();

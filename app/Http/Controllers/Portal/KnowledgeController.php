@@ -28,9 +28,18 @@ class KnowledgeController extends Controller
 
     public function index(Request $request)
     {
-        return view('portal.knowledge', [
-            'sources' => $this->tenant($request)->sources()->withCount('chunks')->latest()->get(),
-        ]);
+        $sources = $this->tenant($request)->sources()->withCount('chunks')->latest()->get();
+
+        // What each website sync read: one row per page or file, with how many passages it gave
+        $read = \App\Models\KnowledgeChunk::query()
+            ->whereIn('knowledge_source_id', $sources->where('type', 'website')->pluck('id'))
+            ->selectRaw('knowledge_source_id, url, min(title) as title, count(*) as passages')
+            ->groupBy('knowledge_source_id', 'url')
+            ->orderBy('url')
+            ->get()
+            ->groupBy('knowledge_source_id');
+
+        return view('portal.knowledge', ['sources' => $sources, 'read' => $read]);
     }
 
     public function storeWebsite(Request $request)

@@ -49,6 +49,20 @@
                     {{ \Illuminate\Support\Str::limit($s->title, 70) }}
                     @if ($s->url)<div class="small"><a href="{{ $s->url }}" target="_blank" rel="noopener" class="copy">{{ \Illuminate\Support\Str::limit($s->url, 60) }}</a></div>@endif
                     @if ($s->error)<div class="small" style="color:var(--bad)">{{ $s->error }}</div>@endif
+                    @if ($s->type === 'website' && ($read[$s->id] ?? collect())->isNotEmpty())
+                        <details class="read-list">
+                            <summary class="small">{{ __('Pages and files read (:n)', ['n' => $read[$s->id]->count()]) }}</summary>
+                            <ul>
+                                @foreach ($read[$s->id] as $item)
+                                    <li class="small">
+                                        <span class="badge">{{ str_ends_with(strtolower((string) parse_url((string) $item->url, PHP_URL_PATH)), '.pdf') ? 'PDF' : __('Page') }}</span>
+                                        <a href="{{ $item->url }}" target="_blank" rel="noopener">{{ \Illuminate\Support\Str::limit($item->title ?: $item->url, 70) }}</a>
+                                        <span class="muted">· {{ __(':n passages', ['n' => $item->passages]) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </details>
+                    @endif
                 </td>
                 <td>{{ __(ucfirst($s->type)) }}</td>
                 <td><span class="badge {{ $s->status }}">{{ __(ucfirst($s->status)) }}</span>@if ($s->type === 'website' && $s->pages)<div class="small muted">{{ __(':n pages', ['n' => $s->pages]) }}</div>@endif</td>
